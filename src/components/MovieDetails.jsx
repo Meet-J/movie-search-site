@@ -142,6 +142,14 @@ const MovieDetails = () => {
               <span>{saved ? 'In Watchlist' : 'Add to Watchlist'}</span>
             </button>
 
+            {/* Compare Movie Button */}
+            <button
+              onClick={() => navigate(`/compare?movie1=${movie.id}`)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm bg-[#23132b] text-[#D6C7FF] hover:bg-[#321c3d] hover:text-white transition-all duration-200 cursor-pointer shadow-md"
+            >
+              <span>⚔️ Compare</span>
+            </button>
+
             {/* Rating Pill */}
             <div className="flex items-center bg-[#23132b] px-3 sm:px-4 py-2 rounded-xl shadow gap-2">
               <img src="/Star.svg" alt="Star" className="w-4 h-4 sm:w-5 sm:h-5" />

@@ -9,6 +9,7 @@ import Login from './components/Login';
 import SignUp from './components/SignUp';
 import Watchlist from './components/Watchlist';
 import GenreFilter from './components/GenreFilter';
+import MovieCompare from './components/MovieCompare';
 import { SkeletonGrid, SkeletonRow } from './components/SkeletonCard';
 import { useWatchlist } from './context/WatchlistContext';
 
@@ -165,6 +166,12 @@ const App = ()=> {
             <>
               <header className="relative flex flex-col items-center">
                 <div className="absolute right-0 top-0 flex items-center gap-3 sm:gap-5" style={{ marginTop: '0px' }}>
+                  <button
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-white bg-white/10 hover:bg-white/20 transition duration-200 hover:scale-105 cursor-pointer border border-white/10"
+                    onClick={() => navigate('/compare')}
+                  >
+                    <span>⚔️ Compare</span>
+                  </button>
                   <button
                     className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-white bg-white/10 hover:bg-white/20 transition duration-200 hover:scale-105 cursor-pointer border border-white/10"
                     onClick={() => navigate('/watchlist')}
@@ -398,6 +405,7 @@ const App = ()=> {
           
           <Route path="/movie/:id" element={<MovieDetails />} />
           <Route path="/watchlist" element={<Watchlist />} />
+          <Route path="/compare" element={<MovieCompare />} />
           <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} />} />
           <Route path="/signup" element={<SignUp />} />
         </Routes>
