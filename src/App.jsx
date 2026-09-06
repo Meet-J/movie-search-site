@@ -9,6 +9,7 @@ import Login from './components/Login';
 import SignUp from './components/SignUp';
 import Watchlist from './components/Watchlist';
 import GenreFilter from './components/GenreFilter';
+import { SkeletonGrid, SkeletonRow } from './components/SkeletonCard';
 import { useWatchlist } from './context/WatchlistContext';
 
 const API_BASE_URL = 'https://api.themoviedb.org/3';
@@ -214,7 +215,7 @@ const App = ()=> {
                 <section className='all-movies'>
                   <h2 className='mt-[40px]'>Search Results for "{debounceSearchTerm}"</h2>
                   {IsLoading ? (
-                    <Spinner />
+                    <SkeletonGrid count={8} />
                   ) : searchResults.length === 0 ? (
                     <p className='text-red-500'>Error loading movies</p>
                   ) : (
@@ -240,7 +241,7 @@ const App = ()=> {
                     </button>
                   </div>
                   {IsLoading ? (
-                    <div className="flex justify-center py-8"><Spinner /></div>
+                    <SkeletonGrid count={8} />
                   ) : genreMovies.length === 0 ? (
                     <p className="text-gray-400">No movies found for this genre.</p>
                   ) : (
@@ -277,7 +278,7 @@ const App = ()=> {
               {!debounceSearchTerm && selectedGenre.id === null && (<section className='trending'>
                 <h2>Trending Movies</h2>
                 {IsLoading ? (
-                  <Spinner />
+                  <SkeletonRow count={5} />
                 ) : (
                   <>
                     <button 
@@ -323,7 +324,7 @@ const App = ()=> {
                   <h2 className='mt-[40px]'>In Theater Now</h2>
                   <>
                     {IsLoading ? (
-                      <div className="flex justify-center py-8"><Spinner /></div>
+                      <SkeletonGrid count={8} />
                     ) : (
                       <>
                         <ul>
@@ -361,7 +362,7 @@ const App = ()=> {
                   <h2 className='mt-[40px]'>Upcoming Movies</h2>
                   <>
                     {IsLoading ? (
-                      <div className="flex justify-center py-8"><Spinner /></div>
+                      <SkeletonGrid count={8} />
                     ) : (
                       <>
                         <ul>
