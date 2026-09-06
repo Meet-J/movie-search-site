@@ -1,33 +1,62 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { users } from './users';
+
+const API_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
 const SignUp = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+
     if (password !== confirmPassword) {
-      alert('Passwords do not match');
+      setError('Passwords do not match');
       return;
     }
-    if (users.find(u => u.email === email)) {
-      alert('Email already registered');
-      return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: name, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Sign up failed');
+      }
+
+      alert('Sign up successful! Please login.');
+      navigate('/login');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-    users.push({ name, email, password });
-    alert('Sign up successful! Please login.');
-    navigate('/login');
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0F0D23] rounded-xl">
       <form onSubmit={handleSubmit} className="bg-white bg-opacity-10 p-8 rounded-xl shadow-lg flex flex-col gap-6 w-full max-w-sm" style={{ backgroundColor: '#030014' }}>
-        <h2 className="text-2xl font-bold text-center text-white mb-4">Sign Up</h2>
+        <h2 className="text-2xl font-bold text-center text-white mb-2">Sign Up</h2>
+        
+        {error && (
+          <div className="bg-red-500/20 border border-red-500 text-red-300 text-xs p-3 rounded-lg text-center">
+            {error}
+          </div>
+        )}
+
         <input
           type="text"
           placeholder="Name"
@@ -66,14 +95,15 @@ const SignUp = () => {
         />
         <button
           type="submit"
-          className="mt-2 px-6 py-2 rounded-lg font-semibold text-black shadow-md transition-transform duration-200 hover:scale-105 hover:shadow-xl"
+          disabled={loading}
+          className="mt-2 px-6 py-2 rounded-lg font-semibold text-black shadow-md transition-transform duration-200 hover:scale-105 hover:shadow-xl disabled:opacity-50"
           style={{ background: 'linear-gradient(90deg, #D6C7FF 0%, #AB8BFF 100%)' }}
         >
-          Sign Up
+          {loading ? 'Creating account...' : 'Sign Up'}
         </button>
       </form>
     </div>
   );
 };
 
-export default SignUp; 
+export default SignUp;

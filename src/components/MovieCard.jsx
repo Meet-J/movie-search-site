@@ -9,7 +9,7 @@ const MovieCard = ({ movie }) => {
 
   const handleBookmark = (e) => {
     e.stopPropagation();
-    toggleWatchlist(movie);
+    toggleWatchlist(movie, navigate);
   };
 
   return (

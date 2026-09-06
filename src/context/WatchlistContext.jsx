@@ -1,46 +1,82 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const WatchlistContext = createContext();
+const API_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+const BACKEND_URL = `${API_BASE}/api/watchlist`;
 
 export const WatchlistProvider = ({ children }) => {
-  const [watchlist, setWatchlist] = useState(() => {
-    try {
-      const stored = localStorage.getItem('movie_watchlist');
-      return stored ? JSON.parse(stored) : [];
-    } catch (e) {
-      console.error('Failed to load watchlist from localStorage', e);
-      return [];
+  const [watchlist, setWatchlist] = useState([]);
+
+  // Fetch user watchlist from MongoDB backend if logged in
+  const fetchWatchlist = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setWatchlist([]);
+      return;
     }
-  });
+
+    try {
+      const response = await fetch(BACKEND_URL, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          setWatchlist(data);
+          localStorage.setItem('movie_watchlist', JSON.stringify(data));
+        }
+      } else {
+        setWatchlist([]);
+      }
+    } catch (err) {
+      console.error('Error fetching watchlist from backend:', err);
+    }
+  };
 
   useEffect(() => {
-    try {
-      localStorage.setItem('movie_watchlist', JSON.stringify(watchlist));
-    } catch (e) {
-      console.error('Failed to save watchlist to localStorage', e);
+    fetchWatchlist();
+  }, []);
+
+  const toggleWatchlist = async (movie, navigate) => {
+    const token = localStorage.getItem('auth_token');
+    
+    // REQUIRE LOGIN: If not logged in, prompt user and redirect to login page
+    if (!token) {
+      alert('Please log in to add movies to your Watchlist!');
+      if (navigate) navigate('/login');
+      return;
     }
-  }, [watchlist]);
 
-  const addToWatchlist = (movie) => {
-    setWatchlist((prev) => {
-      if (prev.some((m) => m.id === movie.id)) return prev;
-      return [...prev, movie];
-    });
-  };
+    const exists = watchlist.some((m) => m.id === movie.id);
+    const updated = exists
+      ? watchlist.filter((m) => m.id !== movie.id)
+      : [movie, ...watchlist];
 
-  const removeFromWatchlist = (movieId) => {
-    setWatchlist((prev) => prev.filter((m) => m.id !== movieId));
-  };
+    setWatchlist(updated);
+    localStorage.setItem('movie_watchlist', JSON.stringify(updated));
 
-  const toggleWatchlist = (movie) => {
-    setWatchlist((prev) => {
-      const exists = prev.some((m) => m.id === movie.id);
-      if (exists) {
-        return prev.filter((m) => m.id !== movie.id);
-      } else {
-        return [...prev, movie];
+    // Save to MongoDB backend for persistent storage
+    try {
+      const res = await fetch(BACKEND_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(movie),
+      });
+
+      if (res.ok) {
+        const serverWatchlist = await res.json();
+        setWatchlist(serverWatchlist);
+        localStorage.setItem('movie_watchlist', JSON.stringify(serverWatchlist));
       }
-    });
+    } catch (err) {
+      console.error('Failed to sync watchlist with MongoDB', err);
+    }
   };
 
   const isInWatchlist = (movieId) => {
@@ -51,10 +87,9 @@ export const WatchlistProvider = ({ children }) => {
     <WatchlistContext.Provider
       value={{
         watchlist,
-        addToWatchlist,
-        removeFromWatchlist,
         toggleWatchlist,
         isInWatchlist,
+        fetchWatchlist,
       }}
     >
       {children}

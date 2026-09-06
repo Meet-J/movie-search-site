@@ -138,7 +138,7 @@ const MovieDetails = () => {
           <div className="flex items-center space-x-3">
             {/* Watchlist Toggle Button */}
             <button
-              onClick={() => toggleWatchlist(movie)}
+              onClick={() => toggleWatchlist(movie, navigate)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer shadow-md ${
                 saved
                   ? 'bg-[#AB8BFF] text-black hover:bg-[#bfa3ff]'
