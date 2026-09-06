@@ -47,27 +47,37 @@ const MovieDetails = () => {
   const navigate = useNavigate();
   const { toggleWatchlist, isInWatchlist } = useWatchlist();
   const [movie, setMovie] = useState(null);
+  const [credits, setCredits] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showTrailerModal, setShowTrailerModal] = useState(false);
   const { trailer, allVideos } = useMovieTrailer(id);
 
   useEffect(() => {
-    const fetchMovie = async () => {
+    const fetchMovieAndCredits = async () => {
       setLoading(true);
       setError('');
       try {
-        const response = await fetch(`${API_BASE_URL}/movie/${id}?language=en-US`, API_OPTIONS);
-        if (!response.ok) throw new Error('Failed to fetch movie details');
-        const data = await response.json();
-        setMovie(data);
+        const [movieRes, creditsRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/movie/${id}?language=en-US`, API_OPTIONS),
+          fetch(`${API_BASE_URL}/movie/${id}/credits?language=en-US`, API_OPTIONS),
+        ]);
+
+        if (!movieRes.ok) throw new Error('Failed to fetch movie details');
+        const movieData = await movieRes.json();
+        setMovie(movieData);
+
+        if (creditsRes.ok) {
+          const creditsData = await creditsRes.json();
+          setCredits(creditsData);
+        }
       } catch (err) {
         setError('Failed to load movie details');
       } finally {
         setLoading(false);
       }
     };
-    fetchMovie();
+    fetchMovieAndCredits();
   }, [id]);
 
   if (loading) return <div className="text-white">Loading...</div>;
@@ -238,6 +248,60 @@ const MovieDetails = () => {
                 ))}
               </div>
             </div>
+
+            {/* Top Cast Section */}
+            {credits?.cast && credits.cast.length > 0 && (
+              <div className="mt-8 pt-6 border-t border-white/10">
+                <h2 className="text-lg sm:text-xl font-semibold mb-4 text-[#A8B5DB]">Top Cast</h2>
+                <div className="flex flex-row overflow-x-auto gap-4 pb-4 hide-scrollbar">
+                  {credits.cast.slice(0, 16).map((actor) => (
+                    <div key={actor.id} className="min-w-[120px] max-w-[130px] flex flex-col items-center text-center bg-[#1a1124] p-3 rounded-xl border border-white/5 hover:border-[#AB8BFF]/40 transition duration-200">
+                      <div className="w-[80px] h-[80px] sm:w-[90px] sm:h-[90px] rounded-full overflow-hidden mb-2.5 bg-[#23132b] flex items-center justify-center border-2 border-[#AB8BFF]/30 shadow-md">
+                        {actor.profile_path ? (
+                          <img
+                            src={`https://image.tmdb.org/t/p/w185${actor.profile_path}`}
+                            alt={actor.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-[#D6C7FF] text-xl font-bold">
+                            {actor.name ? actor.name.charAt(0) : '?'}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-white text-xs font-bold line-clamp-1 w-full">{actor.name}</p>
+                      <p className="text-[#A8B5DB] text-[11px] line-clamp-1 w-full mt-0.5">{actor.character}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Key Crew Section */}
+            {credits?.crew && credits.crew.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-white/10">
+                <h2 className="text-lg sm:text-xl font-semibold mb-4 text-[#A8B5DB]">Featured Crew</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {Object.entries(
+                    credits.crew.reduce((acc, person) => {
+                      if (['Director', 'Screenplay', 'Writer', 'Producer', 'Executive Producer'].includes(person.job)) {
+                        if (!acc[person.id]) {
+                          acc[person.id] = { name: person.name, jobs: [person.job] };
+                        } else if (!acc[person.id].jobs.includes(person.job)) {
+                          acc[person.id].jobs.push(person.job);
+                        }
+                      }
+                      return acc;
+                    }, {})
+                  ).slice(0, 8).map(([id, crewPerson]) => (
+                    <div key={id} className="bg-[#1a1124] p-3.5 rounded-xl border border-white/5 hover:border-[#AB8BFF]/30 transition duration-200">
+                      <p className="text-white font-bold text-sm">{crewPerson.name}</p>
+                      <p className="text-[#D6C7FF] text-xs mt-0.5">{crewPerson.jobs.join(', ')}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
