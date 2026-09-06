@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 
-const Search = ({ searchTerm, setSearchTerm }) => {
+const Search = ({ searchTerm, setSearchTerm, debounceSearchTerm }) => {
   const [history, setHistory] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
@@ -17,12 +17,16 @@ const Search = ({ searchTerm, setSearchTerm }) => {
     }
   }, []);
 
-  // Save current query to history when valid
+  // Save ONLY settled debounced search terms (length >= 3) to history
   useEffect(() => {
-    const trimmed = searchTerm.trim();
-    if (trimmed.length >= 2) {
+    if (!debounceSearchTerm) return;
+    const trimmed = debounceSearchTerm.trim();
+    if (trimmed.length >= 3) {
       setHistory((prev) => {
-        const filtered = prev.filter((item) => item.toLowerCase() !== trimmed.toLowerCase());
+        // Remove previous incomplete prefixes (e.g. if 'batman' is saved, remove 'ba' or 'bat')
+        const filtered = prev.filter(
+          (item) => item.toLowerCase() !== trimmed.toLowerCase() && !trimmed.toLowerCase().startsWith(item.toLowerCase())
+        );
         const updated = [trimmed, ...filtered].slice(0, 5);
         try {
           localStorage.setItem('recent_searches', JSON.stringify(updated));
@@ -32,7 +36,7 @@ const Search = ({ searchTerm, setSearchTerm }) => {
         return updated;
       });
     }
-  }, [searchTerm]);
+  }, [debounceSearchTerm]);
 
   // Click outside listener to auto-close dropdown
   useEffect(() => {

@@ -213,7 +213,7 @@ const App = ()=> {
                 </div>
                 <img src="./hero-img.png" alt="Hero Banner" />
                 <h1>Find <span className='text-gradient'>Movies</span> You'll Enjoy without the hassle</h1>
-                <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+                <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} debounceSearchTerm={debounceSearchTerm} />
                 <GenreFilter selectedGenre={selectedGenre} onSelectGenre={(g) => { setSelectedGenre(g); setGenrePage(1); }} />
               </header>
 

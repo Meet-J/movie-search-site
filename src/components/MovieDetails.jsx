@@ -48,19 +48,22 @@ const MovieDetails = () => {
   const { toggleWatchlist, isInWatchlist } = useWatchlist();
   const [movie, setMovie] = useState(null);
   const [credits, setCredits] = useState(null);
+  const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showTrailerModal, setShowTrailerModal] = useState(false);
   const { trailer, allVideos } = useMovieTrailer(id);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     const fetchMovieAndCredits = async () => {
       setLoading(true);
       setError('');
       try {
-        const [movieRes, creditsRes] = await Promise.all([
+        const [movieRes, creditsRes, recRes] = await Promise.all([
           fetch(`${API_BASE_URL}/movie/${id}?language=en-US`, API_OPTIONS),
           fetch(`${API_BASE_URL}/movie/${id}/credits?language=en-US`, API_OPTIONS),
+          fetch(`${API_BASE_URL}/movie/${id}/recommendations?language=en-US`, API_OPTIONS),
         ]);
 
         if (!movieRes.ok) throw new Error('Failed to fetch movie details');
@@ -70,6 +73,19 @@ const MovieDetails = () => {
         if (creditsRes.ok) {
           const creditsData = await creditsRes.json();
           setCredits(creditsData);
+        }
+
+        if (recRes.ok) {
+          const recData = await recRes.json();
+          if (recData.results && recData.results.length > 0) {
+            setRecommendations(recData.results);
+          } else {
+            const simRes = await fetch(`${API_BASE_URL}/movie/${id}/similar?language=en-US`, API_OPTIONS);
+            if (simRes.ok) {
+              const simData = await simRes.json();
+              setRecommendations(simData.results || []);
+            }
+          }
         }
       } catch (err) {
         setError('Failed to load movie details');
@@ -305,6 +321,36 @@ const MovieDetails = () => {
                     <div key={id} className="bg-[#1a1124] p-3.5 rounded-xl border border-white/5 hover:border-[#AB8BFF]/30 transition duration-200">
                       <p className="text-white font-bold text-sm">{crewPerson.name}</p>
                       <p className="text-[#D6C7FF] text-xs mt-0.5">{crewPerson.jobs.join(', ')}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* You Might Also Like Recommendations Section */}
+            {recommendations && recommendations.length > 0 && (
+              <div className="mt-8 pt-6 border-t border-white/10">
+                <h2 className="text-lg sm:text-xl font-semibold mb-4 text-[#A8B5DB]">You Might Also Like</h2>
+                <div className="flex flex-row overflow-x-auto gap-4 pb-4 hide-scrollbar">
+                  {recommendations.slice(0, 12).map((rec) => (
+                    <div
+                      key={rec.id}
+                      onClick={() => {
+                        navigate(`/movie/${rec.id}`);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="min-w-[140px] max-w-[150px] bg-[#1a1124] p-2.5 rounded-xl border border-white/5 hover:border-[#AB8BFF]/40 cursor-pointer transition-all duration-200 hover:scale-105"
+                    >
+                      <img
+                        src={rec.poster_path ? `https://image.tmdb.org/t/p/w300${rec.poster_path}` : '/no-movie.png'}
+                        alt={rec.title}
+                        className="w-full h-[180px] object-cover rounded-lg mb-2 shadow"
+                      />
+                      <p className="text-white text-xs font-bold line-clamp-1">{rec.title}</p>
+                      <div className="flex items-center justify-between text-[11px] text-[#A8B5DB] mt-1">
+                        <span>⭐ {rec.vote_average?.toFixed(1)}</span>
+                        <span>{rec.release_date ? new Date(rec.release_date).getFullYear() : ''}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
