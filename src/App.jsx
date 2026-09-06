@@ -8,6 +8,7 @@ import MovieDetails from './components/MovieDetails';
 import Login from './components/Login';
 import SignUp from './components/SignUp';
 import Watchlist from './components/Watchlist';
+import GenreFilter from './components/GenreFilter';
 import { useWatchlist } from './context/WatchlistContext';
 
 const API_BASE_URL = 'https://api.themoviedb.org/3';
@@ -34,6 +35,11 @@ const App = ()=> {
   const [upcomingPage, setUpcomingPage] = useState(1);
   const [upcomingTotalPages, setUpcomingTotalPages] = useState(1);
 
+  const [selectedGenre, setSelectedGenre] = useState({ id: null, name: '' });
+  const [genreMovies, setGenreMovies] = useState([]);
+  const [genrePage, setGenrePage] = useState(1);
+  const [genreTotalPages, setGenreTotalPages] = useState(1);
+
   const [IsLoading, setIsLoading] = useState(false);
   const [debounceSearchTerm, setDebouncedSearchTerm] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -42,6 +48,28 @@ const App = ()=> {
   const { watchlist } = useWatchlist();
 
   useDebounce(()=>setDebouncedSearchTerm(searchTerm), 500, [searchTerm]);
+
+  useEffect(() => {
+    if (selectedGenre.id === null) return;
+    const fetchGenreMovies = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/discover/movie?with_genres=${selectedGenre.id}&page=${genrePage}&sort_by=popularity.desc&region=IN`,
+          API_OPTIONS
+        );
+        if (!response.ok) throw new Error('Failed to fetch genre movies');
+        const data = await response.json();
+        setGenreMovies(data.results || []);
+        setGenreTotalPages(data.total_pages || 1);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchGenreMovies();
+  }, [selectedGenre, genrePage]);
 
   useEffect(()=>{
     const fetchTrending = async()=>{
@@ -178,6 +206,7 @@ const App = ()=> {
                 <img src="./hero-img.png" alt="Hero Banner" />
                 <h1>Find <span className='text-gradient'>Movies</span> You'll Enjoy without the hassle</h1>
                 <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+                <GenreFilter selectedGenre={selectedGenre} onSelectGenre={(g) => { setSelectedGenre(g); setGenrePage(1); }} />
               </header>
 
               {/* Search Results section */}
@@ -198,8 +227,54 @@ const App = ()=> {
                 </section>
               )}
 
+              {/* Genre Movies section */}
+              {!debounceSearchTerm && selectedGenre.id !== null && (
+                <section className='all-movies'>
+                  <div className="flex items-center justify-between mt-[40px]">
+                    <h2>{selectedGenre.name} Movies</h2>
+                    <button
+                      onClick={() => setSelectedGenre({ id: null, name: '' })}
+                      className="text-xs text-[#AB8BFF] hover:underline cursor-pointer"
+                    >
+                      Clear Filter &times;
+                    </button>
+                  </div>
+                  {IsLoading ? (
+                    <div className="flex justify-center py-8"><Spinner /></div>
+                  ) : genreMovies.length === 0 ? (
+                    <p className="text-gray-400">No movies found for this genre.</p>
+                  ) : (
+                    <>
+                      <ul>
+                        {genreMovies.map(movie => (
+                          <MovieCard key={movie.id} movie={movie} />
+                        ))}
+                      </ul>
+                      {/* Pagination UI */}
+                      <div className="flex items-center justify-center mt-6 gap-10">
+                        <button
+                          className="w-12 h-12 rounded-lg flex items-center justify-center bg-[#1a1124] hover:bg-[#2a1a3a] transition disabled:opacity-40 cursor-pointer"
+                          onClick={() => setGenrePage(p => Math.max(1, p - 1))}
+                          disabled={genrePage === 1}
+                        >
+                          <span style={{ color: '#b48cff', fontSize: 24 }}>&larr;</span>
+                        </button>
+                        <span className="text-gray-400 text-lg font-semibold">{genrePage} / {genreTotalPages}</span>
+                        <button
+                          className="w-12 h-12 rounded-lg flex items-center justify-center bg-[#1a1124] hover:bg-[#2a1a3a] transition disabled:opacity-40 cursor-pointer"
+                          onClick={() => setGenrePage(p => Math.min(genreTotalPages, p + 1))}
+                          disabled={genrePage === genreTotalPages}
+                        >
+                          <span style={{ color: '#b48cff', fontSize: 24 }}>&rarr;</span>
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </section>
+              )}
+
               {/* Trending Movies section */}
-              {!debounceSearchTerm && (<section className='trending'>
+              {!debounceSearchTerm && selectedGenre.id === null && (<section className='trending'>
                 <h2>Trending Movies</h2>
                 {IsLoading ? (
                   <Spinner />
@@ -243,7 +318,7 @@ const App = ()=> {
               </section>) }
 
               {/* In Theater Movies section */}
-              {!debounceSearchTerm && (
+              {!debounceSearchTerm && selectedGenre.id === null && (
                 <section className='all-movies'>
                   <h2 className='mt-[40px]'>In Theater Now</h2>
                   <>
@@ -281,7 +356,7 @@ const App = ()=> {
               )}
 
               {/* Upcoming Movies section */}
-              {!debounceSearchTerm && (
+              {!debounceSearchTerm && selectedGenre.id === null && (
                 <section className='all-movies'>
                   <h2 className='mt-[40px]'>Upcoming Movies</h2>
                   <>
