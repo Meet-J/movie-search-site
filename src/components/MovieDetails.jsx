@@ -1,4 +1,6 @@
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useWatchlist } from '../context/WatchlistContext';
+
 import { useEffect, useState } from 'react';
 import { TrailerPlayer, TrailerModal, VideoGallery, useMovieTrailer } from './MovieTrailer';
 
@@ -42,6 +44,8 @@ const style = `
 
 const MovieDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { toggleWatchlist, isInWatchlist } = useWatchlist();
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -70,6 +74,8 @@ const MovieDetails = () => {
   if (error) return <div className="text-red-500">{error}</div>;
   if (!movie) return null;
 
+  const saved = isInWatchlist(movie.id);
+
   const formatCurrency = (amount) => {
     if (!amount) return 'N/A';
     return new Intl.NumberFormat('en-US', {
@@ -83,8 +89,18 @@ const MovieDetails = () => {
     <>
       <style>{style}</style>
       <div className="relative movie-details-wrapper rounded-2xl">
+        {/* Back button */}
+        <div className="px-4 sm:px-8 pt-6">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center text-sm font-semibold text-[#D6C7FF] hover:text-white transition cursor-pointer"
+          >
+            &larr; Back to Home
+          </button>
+        </div>
+
         {/* Top Summary Row */}
-        <div className="flex flex-col sm:flex-row items-start justify-between px-4 sm:px-8 pt-8 gap-4">
+        <div className="flex flex-col sm:flex-row items-start justify-between px-4 sm:px-8 pt-4 gap-4">
           <div>
             <h1 className="text-2xl sm:text-4xl font-bold mb-2 text-white">{movie.title}</h1>
             <div className="flex items-center text-[#D6C7FF] text-base sm:text-lg font-medium space-x-1 mb-2">
@@ -94,6 +110,28 @@ const MovieDetails = () => {
             </div>
           </div>
           <div className="flex items-center space-x-3">
+            {/* Watchlist Toggle Button */}
+            <button
+              onClick={() => toggleWatchlist(movie)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer shadow-md ${
+                saved
+                  ? 'bg-[#AB8BFF] text-black hover:bg-[#bfa3ff]'
+                  : 'bg-[#23132b] text-[#D6C7FF] hover:bg-[#321c3d] hover:text-white'
+              }`}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill={saved ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                strokeWidth={saved ? '0' : '2'}
+                className="w-5 h-5"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+              </svg>
+              <span>{saved ? 'In Watchlist' : 'Add to Watchlist'}</span>
+            </button>
+
             {/* Rating Pill */}
             <div className="flex items-center bg-[#23132b] px-3 sm:px-4 py-2 rounded-xl shadow gap-2">
               <img src="/Star.svg" alt="Star" className="w-4 h-4 sm:w-5 sm:h-5" />

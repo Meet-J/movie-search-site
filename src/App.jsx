@@ -7,6 +7,8 @@ import { Routes, Route, useNavigate } from 'react-router-dom';
 import MovieDetails from './components/MovieDetails';
 import Login from './components/Login';
 import SignUp from './components/SignUp';
+import Watchlist from './components/Watchlist';
+import { useWatchlist } from './context/WatchlistContext';
 
 const API_BASE_URL = 'https://api.themoviedb.org/3';
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
@@ -37,6 +39,7 @@ const App = ()=> {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const navigate = useNavigate();
+  const { watchlist } = useWatchlist();
 
   useDebounce(()=>setDebouncedSearchTerm(searchTerm), 500, [searchTerm]);
 
@@ -132,7 +135,21 @@ const App = ()=> {
           <Route path="/" element={
             <>
               <header className="relative flex flex-col items-center">
-                <div className="absolute right-0 top-0 flex gap-5" style={{ marginTop: '0px' }}>
+                <div className="absolute right-0 top-0 flex items-center gap-3 sm:gap-5" style={{ marginTop: '0px' }}>
+                  <button
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-white bg-white/10 hover:bg-white/20 transition duration-200 hover:scale-105 cursor-pointer border border-white/10"
+                    onClick={() => navigate('/watchlist')}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-[#D6C7FF]">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+                    </svg>
+                    <span>Watchlist</span>
+                    {watchlist.length > 0 && (
+                      <span className="bg-[#AB8BFF] text-black text-xs font-bold px-2 py-0.5 rounded-full">
+                        {watchlist.length}
+                      </span>
+                    )}
+                  </button>
                   {isLoggedIn ? (
                     <button
                       className="px-6 py-2 rounded-lg font-semibold text-black bg-white bg-opacity-80 hover:bg-opacity-100 transition transition-transform duration-200 hover:scale-105 hover:shadow-xl"
@@ -304,6 +321,7 @@ const App = ()=> {
           } />
           
           <Route path="/movie/:id" element={<MovieDetails />} />
+          <Route path="/watchlist" element={<Watchlist />} />
           <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} />} />
           <Route path="/signup" element={<SignUp />} />
         </Routes>
